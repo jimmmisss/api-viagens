@@ -1,0 +1,20 @@
+version: "2"
+sql:
+  - engine: "mysql"
+    schema: "migrations"
+    queries: "internal/infrastructure/adapters/out/mysql/queries"
+    gen:
+      go:
+        package: "db"
+        out: "internal/infrastructure/adapters/out/mysql/db"
+        emit_json_tags: true
+        emit_prepared_queries: true
+        emit_exact_table_names: true
+        emit_empty_slices: true
+        overrides:
+          - db_type: "integer"
+            go_type: "int64"
+          - db_type: "numeric"
+            go_type: "float64"
+          - db_type: "decimal"
+            go_type: "float64"

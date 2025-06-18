@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: travel_db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: travel_db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uuser", "-ppassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+#  migrate:
+#    image: migrate/migrate
+#    container_name: travel_migrate
+#    volumes:
+#      - ./migrations:/migrations
+#    command: [
+#      "-path", "/migrations",
+#      "-database", "mysql://user:password@tcp(db:3306)/travel_db",
+#      "up"
+#    ]
+#    depends_on:
+#      db:
+#        condition: service_healthy
+#
+#  app:
+#    build: .
+#    container_name: travel_api
+#    ports:
+#      - "8080:8080"
+#    environment:
+#      - DB_SOURCE=mysql://user:password@tcp(db:3306)/travel_db
+#      - JWT_SECRET_KEY=um-segredo-muito-forte-e-longo
+#      - JWT_EXPIRATION_HOURS=24
+#    depends_on:
+#      - migrate
+
+volumes:
+  mysql_data:
