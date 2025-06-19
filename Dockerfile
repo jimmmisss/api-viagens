@@ -1,34 +1,32 @@
-# Etapa 1: Build
-FROM golang:1.22-alpine AS builder
+# Stage 1: Build the application
+FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
-# Copia os arquivos de dependências e baixa os módulos
+# Copy go.mod and go.sum to download dependencies
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copia o resto do código fonte
+# Copy the rest of the application source code
 COPY . .
 
-# Compila a aplicação
-# -o /app/server: output do binário
-# CGO_ENABLED=0: desabilita CGO para uma compilação estática
-# -ldflags="-w -s": remove informações de debug para um binário menor
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /app/server ./cmd/server
+# Build the application
+# CGO_ENABLED=0 is important for a static binary
+# -o /app/server builds the binary into the /app/server file
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/server ./cmd/api
 
-# Etapa 2: Execução
+# Stage 2: Create the final, minimal image
 FROM alpine:latest
 
-WORKDIR /app
+WORKDIR /root/
 
-# Copia as migrations para a imagem final
-COPY --from=builder /app/migrations ./migrations
-
-# Copia o binário compilado da etapa de build
+# Copy the binary from the builder stage
 COPY --from=builder /app/server .
+# Copy migrations to be able to run them from the container if needed
+COPY migrations ./migrations
 
-# Expõe a porta que a aplicação vai rodar
+# Expose the port the app runs on
 EXPOSE 8080
 
-# Comando para executar a aplicação
-CMD ["/app/server"]
+# Command to run the executable
+CMD ["./server"]
