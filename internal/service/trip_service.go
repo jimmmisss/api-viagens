@@ -44,6 +44,11 @@ func (s *TripService) CreateTrip(ctx context.Context, requesterID uuid.UUID, des
 		UpdatedAt:   time.Now(),
 	}
 
+	// Validate trip before saving
+	if err := trip.Validate(); err != nil {
+		return nil, err
+	}
+
 	if err := s.tripRepo.Create(ctx, trip); err != nil {
 		return nil, err
 	}
@@ -122,5 +127,16 @@ func (s *TripService) CancelApprovedTrip(ctx context.Context, tripID, cancelingU
 		return ErrCancelNotAllowed
 	}
 
-	return s.tripRepo.UpdateStatus(ctx, tripID, domain.StatusCanceled)
+	if err := s.tripRepo.UpdateStatus(ctx, tripID, domain.StatusCanceled); err != nil {
+		return err
+	}
+
+	// Send notification to the requester
+	requester, err := s.userRepo.FindByID(ctx, trip.RequesterID)
+	if err == nil && requester != nil {
+		message := fmt.Sprintf("Your trip to %s has been canceled.", trip.Destination)
+		s.notifier.Send(requester, trip, message)
+	}
+
+	return nil
 }

@@ -47,6 +47,11 @@ func (s *UserService) Register(ctx context.Context, name, email, password string
 		UpdatedAt:    time.Now(),
 	}
 
+	// Validate user before saving
+	if err := user.Validate(); err != nil {
+		return nil, err
+	}
+
 	if err := s.repo.Create(ctx, user); err != nil {
 		return nil, err
 	}

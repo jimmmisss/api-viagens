@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -32,6 +33,40 @@ type Trip struct {
 	Status      TripStatus `json:"status"`
 	CreatedAt   time.Time  `json:"created_at"`
 	UpdatedAt   time.Time  `json:"updated_at"`
+}
+
+// Validate checks if the trip data is valid according to business rules
+func (t *Trip) Validate() error {
+	// Check required fields
+	if t.RequesterID == uuid.Nil {
+		return errors.New("requester_id is required")
+	}
+
+	if t.Destination == "" {
+		return errors.New("destination is required")
+	}
+
+	// Check if StartDate is zero
+	if t.StartDate.IsZero() {
+		return errors.New("start_date is required")
+	}
+
+	// Check if EndDate is zero
+	if t.EndDate.IsZero() {
+		return errors.New("end_date is required")
+	}
+
+	// Check if EndDate is after StartDate
+	if !t.EndDate.After(t.StartDate) {
+		return errors.New("end_date must be after start_date")
+	}
+
+	// Check if Status is valid
+	if !t.Status.IsValid() {
+		return errors.New("invalid status")
+	}
+
+	return nil
 }
 
 type ListTripsParams struct {
