@@ -104,4 +104,29 @@ func TestUser_Validate(t *testing.T) {
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "password_hash is required")
 	})
+
+	t.Run("Multiple validation errors", func(t *testing.T) {
+		user := &User{
+			ID:           validID,
+			Name:         "",              // Invalid: empty name
+			Email:        "invalid-email", // Invalid: not a valid email format
+			PasswordHash: "",              // Invalid: empty password hash
+			CreatedAt:    now,
+			UpdatedAt:    now,
+		}
+
+		err := user.Validate()
+		assert.Error(t, err)
+
+		// Check that all errors are reported
+		errMsg := err.Error()
+		assert.Contains(t, errMsg, "name is required")
+		assert.Contains(t, errMsg, "invalid email format")
+		assert.Contains(t, errMsg, "password_hash is required")
+
+		// Check that it's a ValidationErrors type
+		validationErrs, ok := err.(*ValidationErrors)
+		assert.True(t, ok, "Error should be of type *ValidationErrors")
+		assert.Equal(t, 3, len(validationErrs.GetErrors()))
+	})
 }

@@ -11,7 +11,7 @@ import (
 func TestTrip_Validate(t *testing.T) {
 	// Setup valid trip for reuse
 	validRequesterID := uuid.New()
-	validStartDate := time.Now().Add(24 * time.Hour) // tomorrow
+	validStartDate := time.Now().Add(24 * time.Hour)   // tomorrow
 	validEndDate := validStartDate.Add(48 * time.Hour) // 2 days after start
 
 	t.Run("Valid trip", func(t *testing.T) {
@@ -125,5 +125,32 @@ func TestTrip_Validate(t *testing.T) {
 		err := trip.Validate()
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid status")
+	})
+
+	t.Run("Multiple validation errors", func(t *testing.T) {
+		trip := &Trip{
+			ID:          uuid.New(),
+			RequesterID: uuid.Nil,         // Invalid: zero value
+			Destination: "",               // Invalid: empty string
+			StartDate:   time.Time{},      // Invalid: zero value
+			EndDate:     time.Time{},      // Invalid: zero value
+			Status:      "invalid_status", // Invalid status
+		}
+
+		err := trip.Validate()
+		assert.Error(t, err)
+
+		// Check that all errors are reported
+		errMsg := err.Error()
+		assert.Contains(t, errMsg, "requester_id is required")
+		assert.Contains(t, errMsg, "destination is required")
+		assert.Contains(t, errMsg, "start_date is required")
+		assert.Contains(t, errMsg, "end_date is required")
+		assert.Contains(t, errMsg, "invalid status")
+
+		// Check that it's a ValidationErrors type
+		validationErrs, ok := err.(*ValidationErrors)
+		assert.True(t, ok, "Error should be of type *ValidationErrors")
+		assert.Equal(t, 5, len(validationErrs.GetErrors()))
 	})
 }

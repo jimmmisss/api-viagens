@@ -2,7 +2,6 @@ package domain
 
 import (
 	"context"
-	"errors"
 	"regexp"
 	"strings"
 	"time"
@@ -21,30 +20,27 @@ type User struct {
 
 // Validate checks if the user data is valid according to business rules
 func (u *User) Validate() error {
+	validationErrors := NewValidationErrors()
+
 	// Check required fields
-	if u.Name == "" {
-		return errors.New("name is required")
+	validationErrors.AddIf(u.Name == "", "name is required")
+	validationErrors.AddIf(u.Email == "", "email is required")
+
+	// Only check email format if email is not empty
+	if u.Email != "" {
+		// Trim spaces from email and check if it's still valid
+		validationErrors.AddIf(strings.TrimSpace(u.Email) != u.Email, "email cannot contain leading or trailing spaces")
+
+		// Validate email format
+		emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+		validationErrors.AddIf(!emailRegex.MatchString(u.Email), "invalid email format")
 	}
 
-	if u.Email == "" {
-		return errors.New("email is required")
-	}
+	validationErrors.AddIf(u.PasswordHash == "", "password_hash is required")
 
-	// Trim spaces from email and check if it's still valid
-	if strings.TrimSpace(u.Email) != u.Email {
-		return errors.New("email cannot contain leading or trailing spaces")
+	if validationErrors.HasErrors() {
+		return validationErrors
 	}
-
-	// Validate email format
-	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
-	if !emailRegex.MatchString(u.Email) {
-		return errors.New("invalid email format")
-	}
-
-	if u.PasswordHash == "" {
-		return errors.New("password_hash is required")
-	}
-
 	return nil
 }
 

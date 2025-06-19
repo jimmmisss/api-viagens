@@ -2,7 +2,6 @@ package domain
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -37,35 +36,29 @@ type Trip struct {
 
 // Validate checks if the trip data is valid according to business rules
 func (t *Trip) Validate() error {
-	// Check required fields
-	if t.RequesterID == uuid.Nil {
-		return errors.New("requester_id is required")
-	}
+	validationErrors := NewValidationErrors()
 
-	if t.Destination == "" {
-		return errors.New("destination is required")
-	}
+	// Check required fields
+	validationErrors.AddIf(t.RequesterID == uuid.Nil, "requester_id is required")
+	validationErrors.AddIf(t.Destination == "", "destination is required")
 
 	// Check if StartDate is zero
-	if t.StartDate.IsZero() {
-		return errors.New("start_date is required")
-	}
+	validationErrors.AddIf(t.StartDate.IsZero(), "start_date is required")
 
 	// Check if EndDate is zero
-	if t.EndDate.IsZero() {
-		return errors.New("end_date is required")
-	}
+	validationErrors.AddIf(t.EndDate.IsZero(), "end_date is required")
 
 	// Check if EndDate is after StartDate
-	if !t.EndDate.After(t.StartDate) {
-		return errors.New("end_date must be after start_date")
+	if !t.StartDate.IsZero() && !t.EndDate.IsZero() {
+		validationErrors.AddIf(!t.EndDate.After(t.StartDate), "end_date must be after start_date")
 	}
 
 	// Check if Status is valid
-	if !t.Status.IsValid() {
-		return errors.New("invalid status")
-	}
+	validationErrors.AddIf(!t.Status.IsValid(), "invalid status")
 
+	if validationErrors.HasErrors() {
+		return validationErrors
+	}
 	return nil
 }
 
