@@ -26,7 +26,8 @@ func (h *Handler) CreateTrip(c *gin.Context) {
 
 	var req createTripRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		validationErrors := parseValidationErrors(err)
+		c.JSON(http.StatusBadRequest, gin.H{"errors": validationErrors.GetErrors()})
 		return
 	}
 
@@ -152,7 +153,8 @@ func (h *Handler) UpdateTripStatus(c *gin.Context) {
 
 	var req updateStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		validationErrors := parseValidationErrors(err)
+		c.JSON(http.StatusBadRequest, gin.H{"errors": validationErrors.GetErrors()})
 		return
 	}
 	if !req.Status.IsValid() || req.Status == domain.StatusRequested {

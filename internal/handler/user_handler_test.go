@@ -106,6 +106,28 @@ func TestRegisterUser(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusBadRequest, w.Code)
+
+		// Parse the response body to check the error message format
+		var response map[string]interface{}
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+
+		// Check that the response contains an "errors" field that is an array
+		errors, ok := response["errors"].([]interface{})
+		assert.True(t, ok, "Response should contain an 'errors' array")
+		assert.NotEmpty(t, errors, "Errors array should not be empty")
+
+		// Check that at least one error message is in the expected format
+		foundExpectedError := false
+		for _, errMsg := range errors {
+			if errStr, ok := errMsg.(string); ok {
+				if errStr == "email is required" {
+					foundExpectedError = true
+					break
+				}
+			}
+		}
+		assert.True(t, foundExpectedError, "Expected to find error message 'email is required'")
 	})
 
 	t.Run("User already exists", func(t *testing.T) {
@@ -232,6 +254,28 @@ func TestLoginUser(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusBadRequest, w.Code)
+
+		// Parse the response body to check the error message format
+		var response map[string]interface{}
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+
+		// Check that the response contains an "errors" field that is an array
+		errors, ok := response["errors"].([]interface{})
+		assert.True(t, ok, "Response should contain an 'errors' array")
+		assert.NotEmpty(t, errors, "Errors array should not be empty")
+
+		// Check that at least one error message is in the expected format
+		foundExpectedError := false
+		for _, errMsg := range errors {
+			if errStr, ok := errMsg.(string); ok {
+				if errStr == "email is required" {
+					foundExpectedError = true
+					break
+				}
+			}
+		}
+		assert.True(t, foundExpectedError, "Expected to find error message 'email is required'")
 	})
 
 	t.Run("Invalid credentials - user not found", func(t *testing.T) {

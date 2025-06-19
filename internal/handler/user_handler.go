@@ -20,7 +20,8 @@ type registerRequest struct {
 func (h *Handler) RegisterUser(c *gin.Context) {
 	var req registerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		validationErrors := parseValidationErrors(err)
+		c.JSON(http.StatusBadRequest, gin.H{"errors": validationErrors.GetErrors()})
 		return
 	}
 
@@ -52,7 +53,8 @@ type loginRequest struct {
 func (h *Handler) LoginUser(c *gin.Context) {
 	var req loginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		validationErrors := parseValidationErrors(err)
+		c.JSON(http.StatusBadRequest, gin.H{"errors": validationErrors.GetErrors()})
 		return
 	}
 
