@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jimmmmisss/api-viagens/internal/config"
+	"github.com/jimmmmisss/api-viagens/internal/domain"
 	"github.com/jimmmmisss/api-viagens/internal/service"
 	"github.com/jimmmmisss/api-viagens/internal/utils"
 )
@@ -29,6 +30,13 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 			return
 		}
+
+		// Check if it's a validation error
+		if validationErrs, ok := err.(*domain.ValidationErrors); ok {
+			c.JSON(http.StatusBadRequest, gin.H{"errors": validationErrs.GetErrors()})
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register user"})
 		return
 	}
@@ -54,6 +62,13 @@ func (h *Handler) LoginUser(c *gin.Context) {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
+
+		// Check if it's a validation error
+		if validationErrs, ok := err.(*domain.ValidationErrors); ok {
+			c.JSON(http.StatusBadRequest, gin.H{"errors": validationErrs.GetErrors()})
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Login failed"})
 		return
 	}

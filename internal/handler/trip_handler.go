@@ -37,6 +37,12 @@ func (h *Handler) CreateTrip(c *gin.Context) {
 
 	trip, err := h.tripService.CreateTrip(c.Request.Context(), userID, req.Destination, req.StartDate, req.EndDate)
 	if err != nil {
+		// Check if it's a validation error
+		if validationErrs, ok := err.(*domain.ValidationErrors); ok {
+			c.JSON(http.StatusBadRequest, gin.H{"errors": validationErrs.GetErrors()})
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create trip"})
 		return
 	}
@@ -67,6 +73,13 @@ func (h *Handler) GetTripByID(c *gin.Context) {
 			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 			return
 		}
+
+		// Check if it's a validation error
+		if validationErrs, ok := err.(*domain.ValidationErrors); ok {
+			c.JSON(http.StatusBadRequest, gin.H{"errors": validationErrs.GetErrors()})
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve trip"})
 		return
 	}
@@ -107,6 +120,12 @@ func (h *Handler) ListTrips(c *gin.Context) {
 
 	trips, err := h.tripService.ListTrips(c.Request.Context(), params)
 	if err != nil {
+		// Check if it's a validation error
+		if validationErrs, ok := err.(*domain.ValidationErrors); ok {
+			c.JSON(http.StatusBadRequest, gin.H{"errors": validationErrs.GetErrors()})
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list trips"})
 		return
 	}
@@ -149,7 +168,12 @@ func (h *Handler) UpdateTripStatus(c *gin.Context) {
 		case errors.Is(err, service.ErrSelfApproval):
 			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update trip status"})
+			// Check if it's a validation error
+			if validationErrs, ok := err.(*domain.ValidationErrors); ok {
+				c.JSON(http.StatusBadRequest, gin.H{"errors": validationErrs.GetErrors()})
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update trip status"})
+			}
 		}
 		return
 	}
@@ -178,7 +202,12 @@ func (h *Handler) CancelApprovedTrip(c *gin.Context) {
 		case errors.Is(err, service.ErrPermissionDenied), errors.Is(err, service.ErrCancelNotAllowed), errors.Is(err, service.ErrInvalidStatus):
 			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to cancel trip"})
+			// Check if it's a validation error
+			if validationErrs, ok := err.(*domain.ValidationErrors); ok {
+				c.JSON(http.StatusBadRequest, gin.H{"errors": validationErrs.GetErrors()})
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to cancel trip"})
+			}
 		}
 		return
 	}

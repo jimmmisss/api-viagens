@@ -14,6 +14,7 @@ import (
 	"github.com/jimmmmisss/api-viagens/internal/handler"
 	"github.com/jimmmmisss/api-viagens/internal/mocks"
 	"github.com/jimmmmisss/api-viagens/internal/service"
+	"github.com/jimmmmisss/api-viagens/internal/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -91,7 +92,7 @@ func TestRegisterUser(t *testing.T) {
 
 		// Create request with invalid body
 		reqBody := map[string]interface{}{
-			"name":     "Test User",
+			"name": "Test User",
 			// Missing email
 			"password": "password123",
 		}
@@ -172,7 +173,11 @@ func TestLoginUser(t *testing.T) {
 		// Arrange
 		router, mockUserRepo := setupTestRouter()
 
-		hashedPassword := "$2a$10$1ggfMVZV6Js0ybvJufLRUOWHS5f6KneuP0XwwHpJ8L8iw0hLyhsiG" // hashed "password123"
+		// Generate a valid hash for the password "password123"
+		password := "password123"
+		hashedPassword, err := utils.HashPassword(password)
+		assert.NoError(t, err)
+
 		userID := uuid.New()
 		user := &domain.User{
 			ID:           userID,
@@ -200,7 +205,7 @@ func TestLoginUser(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 
 		var response map[string]interface{}
-		err := json.Unmarshal(w.Body.Bytes(), &response)
+		err = json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
 		assert.Contains(t, response, "token")
 		assert.NotEmpty(t, response["token"])
