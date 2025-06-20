@@ -13,7 +13,7 @@ import (
 var (
 	ErrTripNotFound     = errors.New("trip not found")
 	ErrPermissionDenied = errors.New("permission denied")
-	ErrSelfApproval     = errors.New("requester cannot approve or cancel their own trip status")
+	ErrSelfApproval     = errors.New("you cannot approve or cancel your own trip")
 	ErrInvalidStatus    = errors.New("invalid status for this operation")
 	ErrCancelNotAllowed = errors.New("cannot cancel a trip that starts in 7 days or less")
 )
@@ -63,11 +63,7 @@ func (s *TripService) GetTripByID(ctx context.Context, tripID, userID uuid.UUID)
 	if trip == nil {
 		return nil, ErrTripNotFound
 	}
-	// Rule: A user can only see their own trips.
-	// We can extend this for "manager" roles in the future.
-	if trip.RequesterID != userID {
-		return nil, ErrPermissionDenied
-	}
+	// Allow any user to see any trip to enable approval by other users
 	return trip, nil
 }
 

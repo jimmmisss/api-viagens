@@ -17,6 +17,7 @@ import (
 	"github.com/jimmmmisss/api-viagens/internal/handler"
 	"github.com/jimmmmisss/api-viagens/internal/repository"
 	"github.com/jimmmmisss/api-viagens/internal/service"
+	"github.com/jimmmmisss/api-viagens/internal/utils"
 )
 
 func main() {
@@ -37,7 +38,10 @@ func main() {
 	notificationSvc := service.NewLogNotificationService()
 	userSvc := service.NewUserService(userRepo)
 	tripSvc := service.NewTripService(tripRepo, userRepo, notificationSvc)
-	h := handler.NewHandler(userSvc, tripSvc)
+	h := handler.NewHandler(userSvc, tripSvc, cfg.JWTSecretKey)
+
+	// Start token blacklist cleanup routine
+	go startTokenBlacklistCleanup()
 
 	// Setup Gin router
 	router := setupRouter(h, cfg.JWTSecretKey)
@@ -87,6 +91,20 @@ func connectDB(cfg *config.Config) (*pgxpool.Pool, error) {
 	return dbpool, nil
 }
 
+// startTokenBlacklistCleanup runs a periodic cleanup of the token blacklist
+func startTokenBlacklistCleanup() {
+	ticker := time.NewTicker(1 * time.Hour)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			log.Println("Cleaning up token blacklist...")
+			utils.GetTokenBlacklist().Cleanup()
+		}
+	}
+}
+
 func setupRouter(h *handler.Handler, jwtSecret string) *gin.Engine {
 	r := gin.Default()
 
@@ -114,6 +132,11 @@ func setupRouter(h *handler.Handler, jwtSecret string) *gin.Engine {
 	authMiddleware := middleware.AuthMiddleware(jwtSecret)
 	authRoutes.Use(authMiddleware)
 	{
+		// User routes
+		authRoutes.POST("/logout", h.LogoutUser)
+		authRoutes.GET("/me", h.GetCurrentUser)
+
+		// Trip routes
 		authRoutes.POST("/trips", h.CreateTrip)
 		authRoutes.GET("/trips", h.ListTrips)
 		authRoutes.GET("/trips/:id", h.GetTripByID)

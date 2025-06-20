@@ -25,6 +25,13 @@ func AuthMiddleware(secretKey string) gin.HandlerFunc {
 		}
 
 		tokenString := parts[1]
+
+		// Check if token is blacklisted
+		if utils.GetTokenBlacklist().IsBlacklisted(tokenString) {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token has been revoked"})
+			return
+		}
+
 		token, err := utils.ValidateJWT(tokenString, secretKey)
 		if err != nil || !token.Valid {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})

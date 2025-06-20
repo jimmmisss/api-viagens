@@ -11,16 +11,18 @@ import (
 
 // Handler holds all services that the handlers will need.
 type Handler struct {
-	userService *service.UserService
-	tripService *service.TripService
-	validate    *validator.Validate
+	userService  *service.UserService
+	tripService  *service.TripService
+	validate     *validator.Validate
+	jwtSecretKey string
 }
 
-func NewHandler(userSvc *service.UserService, tripSvc *service.TripService) *Handler {
+func NewHandler(userSvc *service.UserService, tripSvc *service.TripService, jwtSecretKey string) *Handler {
 	return &Handler{
-		userService: userSvc,
-		tripService: tripSvc,
-		validate:    validator.New(),
+		userService:  userSvc,
+		tripService:  tripSvc,
+		validate:     validator.New(),
+		jwtSecretKey: jwtSecretKey,
 	}
 }
 

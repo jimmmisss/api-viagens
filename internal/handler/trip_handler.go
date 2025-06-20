@@ -95,8 +95,17 @@ func (h *Handler) ListTrips(c *gin.Context) {
 		return
 	}
 
-	params := domain.ListTripsParams{
-		RequesterID: &userID,
+	params := domain.ListTripsParams{}
+
+	// If requester_id query param is provided, filter by that requester
+	// Otherwise, show all trips to allow other users to approve them
+	if requesterID := c.Query("requester_id"); requesterID != "" {
+		if id, err := uuid.Parse(requesterID); err == nil {
+			params.RequesterID = &id
+		}
+	} else if onlyMine := c.Query("only_mine"); onlyMine == "true" {
+		// If only_mine=true is specified, show only the current user's trips
+		params.RequesterID = &userID
 	}
 
 	if status := c.Query("status"); status != "" {
