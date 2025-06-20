@@ -205,6 +205,36 @@ func (h *Handler) CancelApprovedTrip(c *gin.Context) {
 		return
 	}
 
+	// First, get the trip to check its status and requester
+	trip, err := h.tripService.GetTripByID(c.Request.Context(), tripID, cancelingUserID)
+	if err != nil {
+		if errors.Is(err, service.ErrTripNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Trip not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve trip"})
+		}
+		return
+	}
+
+	// Check if the user is the requester
+	if trip.RequesterID != cancelingUserID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You can only cancel your own trips"})
+		return
+	}
+
+	// Check if the trip is in the approved status
+	if trip.Status != domain.StatusApproved {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Only approved trips can be canceled"})
+		return
+	}
+
+	// Check if the trip starts within the next 7 days
+	if time.Until(trip.StartDate) < 7*24*time.Hour {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Cannot cancel a trip that starts in 7 days or less"})
+		return
+	}
+
+	// If all checks pass, proceed with cancellation
 	err = h.tripService.CancelApprovedTrip(c.Request.Context(), tripID, cancelingUserID)
 	if err != nil {
 		switch {
